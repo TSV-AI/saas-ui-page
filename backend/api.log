@@ -1,0 +1,25 @@
+INFO:     Started server process [89112]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+/Users/lukemcglynn/saas-ui-page/backend/simple_api.py:69: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp": datetime.utcnow().isoformat(),
+INFO:     127.0.0.1:59933 - "GET /health HTTP/1.1" 200 OK
+/Users/lukemcglynn/saas-ui-page/backend/simple_api.py:89: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "created_at": datetime.utcnow().isoformat(),
+/Users/lukemcglynn/saas-ui-page/backend/simple_api.py:91: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+  "request": request.dict()
+INFO:     127.0.0.1:59953 - "POST /api/v1/jobs HTTP/1.1" 200 OK
+/Users/lukemcglynn/saas-ui-page/backend/simple_api.py:209: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  jobs_db[job_id]["completed_at"] = datetime.utcnow().isoformat()
+INFO:     127.0.0.1:59987 - "GET /api/v1/jobs/616b8fbd-dbb4-4cff-95d2-9fa15d74eec3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60008 - "GET /api/v1/jobs/616b8fbd-dbb4-4cff-95d2-9fa15d74eec3/results?limit=3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60033 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60033 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60044 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60044 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:60051 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60159 - "OPTIONS /api/v1/jobs HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60709 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60847 - "OPTIONS /api/v1/jobs HTTP/1.1" 405 Method Not Allowed
+INFO:     127.0.0.1:60972 - "OPTIONS /api/v1/jobs HTTP/1.1" 405 Method Not Allowed

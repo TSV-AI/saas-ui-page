@@ -1,0 +1,7 @@
+INFO:     Started server process [91470]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+/Users/lukemcglynn/saas-ui-page/backend/simple_api.py:84: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp": datetime.utcnow().isoformat(),
+INFO:     127.0.0.1:64515 - "GET /health HTTP/1.1" 200 OK

@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: lead_scraper
+      POSTGRES_USER: scraper_user
+      POSTGRES_PASSWORD: scraper_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scraper_user -d lead_scraper"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # FastAPI Application
+  api:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://scraper_user:scraper_password@db:5432/lead_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - API_DEBUG=true
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./exports:/app/exports
+      - /dev/shm:/dev/shm  # For Playwright browser
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery Worker for Job Processing
+  worker-jobs:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A scraper.tasks.celery_app worker --loglevel=info --queues=jobs,default --concurrency=2
+    environment:
+      - DATABASE_URL=postgresql://scraper_user:scraper_password@db:5432/lead_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./exports:/app/exports
+      - /dev/shm:/dev/shm  # For Playwright browser
+    restart: unless-stopped
+
+  # Celery Worker for Discovery Tasks
+  worker-discovery:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A scraper.tasks.celery_app worker --loglevel=info --queues=discovery --concurrency=3
+    environment:
+      - DATABASE_URL=postgresql://scraper_user:scraper_password@db:5432/lead_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./exports:/app/exports
+      - /dev/shm:/dev/shm  # For Playwright browser
+    restart: unless-stopped
+
+  # Celery Worker for Enrichment Tasks
+  worker-enrichment:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A scraper.tasks.celery_app worker --loglevel=info --queues=enrichment --concurrency=4
+    environment:
+      - DATABASE_URL=postgresql://scraper_user:scraper_password@db:5432/lead_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./exports:/app/exports
+      - /dev/shm:/dev/shm  # For Playwright browser
+    restart: unless-stopped
+
+  # Celery Beat Scheduler
+  beat:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A scraper.tasks.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://scraper_user:scraper_password@db:5432/lead_scraper
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Flower for Celery Monitoring
+  flower:
+    build: 
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A scraper.tasks.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
